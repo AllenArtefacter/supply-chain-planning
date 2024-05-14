@@ -66,7 +66,7 @@ def generate_simulation(
             
             service_level = config['channel_plan'][channel]['service_level']
             
-            allocation_needed = np.ceil(ttl_sales_forecast * service_level) + safety_stock
+            allocation_needed = np.ceil(ttl_sales_forecast * service_level) + safety_stock - current_stock
             
             
             allocation = {}
@@ -194,6 +194,8 @@ def get_status(x):
     status = 'full'
     if x['alert'] == 1:
         status = 'risk'
+    if x['stock'] < x['safety_stock']/2:
+        status = 'near stockout' 
     if x['sales'] < x['sales_potential_daily']:
         status = 'stockout'
     if x['stock_from'] == 'hub':
