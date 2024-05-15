@@ -89,8 +89,20 @@ def generate_simulation(
             df_allocation_['alert'] = (df_allocation_['stock'] < safety_stock).astype(int)
             
             df_allocation = pd.concat([df_allocation, df_allocation_], axis = 0)
+    
+    df_allocation['status'] = df_allocation.apply(get_status, axis = 1)
+    df_allocation['date'] = pd.to_datetime(df_allocation['date'])
 
     return df_allocation
+
+def summarize_status(df_allocation):
+    df_status = pd.pivot_table(df_allocation, index=['sku_name', 'channel'],columns= 'date' ,values='status', aggfunc=lambda x: ', '.join(x))
+    sales_through_breakdown = df_allocation.groupby(['sku_name','channel']).apply(lambda x: x.sales.sum()/(x['stock_in'].sum() + x[x['week']==0].stock) )
+    stockout_breakdown = df_allocation.groupby(['sku_name','channel']).apply(lambda x: pd.Series(1 - x.sales.sum()/x.sales_potential_daily.sum(), index = ['stockout']))
+    sales_through_breakdown.columns = ['sales_through']
+    stockout_breakdown.columns = ['stockout']
+    df_status = sales_through_breakdown.join(stockout_breakdown).join(df_status)
+    return df_status
     
 def ttl_sales_through_rate(df_allocation):
     current_stock = df_allocation.query('week == 0').stock.sum()
