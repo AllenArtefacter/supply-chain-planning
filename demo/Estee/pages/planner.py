@@ -5,7 +5,7 @@ import os
 from flask_caching import Cache
 import pandas as pd 
 from simulation import generate_simulation,get_status,ttl_sales_through_rate,ttl_sales_shortage_rate
-from elements import channel_parameter_element
+from elements import channel_parameter_element,legend_description
 
 
 
@@ -22,11 +22,11 @@ df_hisdf_hub_stocktory = pd.read_csv(hub_path)
 app = dash.register_page(__name__)
 
 layout = html.Div(
-    [
+    [         
+    dcc.Store(id='status'),
+    dcc.Store(id='allocation'),
         html.Div(
             [
-                dcc.Store(id='status'),
-                dcc.Store(id='allocation'),
              #'main',
                 html.Div(
                     [
@@ -68,20 +68,22 @@ layout = html.Div(
                     [
                         html.Div(
                             [
-                                html.Div(id ='sales-through', style = {'display': 'inline-block', 'width': '100px'}),
-                                html.Div(id ='stockout', style = {'display': 'inline-block', 'width': '100px'}),
+                                html.Div(id ='sales-through', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem', 'font-weight':'400'}),
+                                html.Div(id ='stockout', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem','font-weight':'400'}),
                             ],
-                        style = {'height': '100px'}),
+                            style = {'height': '50px','margin-top': '10px', 'border':'solid 0px grey','border-radius':'2px'}
+                        ),
+                        legend_description,
                         html.Div(dcc.Loading(id="test1", type="cube")),
-                        html.Div(id="status-details"),
+                        html.Div(id="status-details",),
                      
                      ],
-                    style = {'width':'80%', 'height':'800px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
+                    style = {'width':'70%', 'height':'800px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
                 )
             ]
         ),
     ]
-    ,style = {'height':'800px', 'background-color':'white', 'margin-top':'0', 'margin-left':'15%', 'margin-right':'15%'}
+    ,style = {'height':'800px', 'background-color':'white', 'margin-top':'0', 'margin-left':'5%', 'margin-right':'5%'}
 )
 
 

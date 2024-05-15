@@ -7,6 +7,7 @@ import dash_ag_grid as dag
 import json
 import plotly.graph_objects as go 
 from datetime import timedelta
+import numpy as np 
 
 from simulation import generate_simulation,get_status,ttl_sales_through_rate,ttl_sales_shortage_rate,summarize_status
 
@@ -47,6 +48,8 @@ def display_channel_parameter_element(rows):
     [Output("test1", "children"),
      Output("status", "data"),
      Output("allocation", "data"),
+     Output('sales-through', 'children'),
+     Output('stockout', 'children'),
      ],
     Input('submit1', 'n_clicks'),
     State("transportation1", "value"),
@@ -100,7 +103,13 @@ def get_status_from_prameter(_, t1,  t2, channel_rows):
     
     status_table = _status2table(df_status)
     
-    return status_table, df_status_.reset_index().to_dict('records'), df_allocation.to_dict('records')
+    return (
+        status_table, 
+        df_status_.reset_index().to_dict('records'), 
+        df_allocation.to_dict('records'), 
+        f'Total Sales Through: {np.round(sales_through_rate,2)}%',
+        f'Stockout Rate: {np.round(stockout_rate,2)}%',
+    )
 
 @callback(
     Output("status-details", "children"),
@@ -108,7 +117,6 @@ def get_status_from_prameter(_, t1,  t2, channel_rows):
     State("status", "data"),
     State("allocation", "data"),
     prevent_initial_call=True
-    
 )
 def display_status_details(cell, status_records, allocation_records):
     
@@ -125,7 +133,10 @@ def display_status_details(cell, status_records, allocation_records):
     
     fig = _plot_details(df_allocation, sku, channel,c_idx)
 
-    return dcc.Graph(figure=fig,style = {'height':'200px', 'margin-top':'20px', 'border':'solid 0.5px grey'})
+    return html.Div(
+        dcc.Graph(figure=fig,style = {'height':'190px', 'margin':'5px'}),
+        style = {'heigh':'200px','margin-top':'1px', 'border':'solid 0.5px grey','border-radius':'2px'}
+    )
 
 
 
@@ -137,51 +148,55 @@ def _status2table(df_status):
     datetime_cols = [i.strftime("%Y %b %d") for i in df_status_.columns[4:]]
     df_status_.columns = list(df_status_.columns[:4]) + datetime_cols
 
-    columnDef = [
-        {
-            'headerName': 'Info',
-            'children':[
-                {'field': 'sku','cellStyle': {'font-size': '12xrem'}, 'maxWidth':80,},
-                {'field': 'channel','cellStyle': {'font-size': '12rem'}, 'maxWidth':120},
-                {'field': 'sales through','cellStyle': {'font-size': '12rem'}, 'valueFormatter': {"function":"params.value == null ? '' :  d3.format(',.1%')(params.value)" }},
-                {'field': 'stockout rate','cellStyle': {'font-size': '12rem'}, 'valueFormatter': {"function":"params.value == null ? '' :  d3.format(',.1%')(params.value)" }},
-            ]
-        },
-        {
-            'headerName': 'Date',
-            'children':[
-                {'field': c, 'cellStyle': {'font-size': '12rem'},'maxWidth':60,'sortable':False,
-                    'cellStyle': {
-                    "styleConditions": [
-                        {
-                            "condition": "params.value == 'full'",
-                            "style": {"backgroundColor": "#98D8AA", "color":"#98D8AA"},
-                        },
-                        {
-                            "condition": "['hub', 'manufacture'].includes(params.value)",
-                            "style": {"backgroundColor": "#F7D060", "color":"#F7D060"},
-                        },
-                        {
-                            "condition": "params.value == 'risk'",
-                            "style": {"backgroundColor": "#E99497", "color":"#E99497"},
-                        },
-                        {
-                            "condition": "params.value == 'near stockout'",
-                            "style": {"backgroundColor": "#FF6363", "color":"#FF6363"},
-                        },
-                        {
-                            "condition": "params.value == 'stockout'",
-                            "style": {"backgroundColor": "#577B8D", "color":"#577B8D"},
-                        },
-                    ]
-                    
-                    }
-                 }
-                for c in df_status_.columns[4:]
-            ]
-        }
+    # columnDef = [
+    #     {
+    #         'headerName': 'Info',
+    #         'children':[]
+    #     },
+    #     {
+    #         'headerName': 'Date',
+    #         'children':[]
+    #     }
+    # ]
+    
+    comment_columnDef = [
+        {'field': 'sku','cellStyle': {'font-size': '12xrem'}, 'maxWidth':80,},
+        {'field': 'channel','cellStyle': {'font-size': '12rem'}, 'maxWidth':120},
+        {'field': 'sales through','cellStyle': {'font-size': '12rem'}, 'valueFormatter': {"function":"params.value == null ? '' :  d3.format(',.1%')(params.value)" }},
+        {'field': 'stockout rate','cellStyle': {'font-size': '12rem'}, 'valueFormatter': {"function":"params.value == null ? '' :  d3.format(',.1%')(params.value)" }},
     ]
-
+    
+    date_columnDef =  [
+        {'field': c, 'cellStyle': {'font-size': '12rem'},'maxWidth':60,'sortable':False,
+            'cellStyle': {
+            "styleConditions": [
+                {
+                    "condition": "params.value == 'full'",
+                    "style": {"backgroundColor": "#98D8AA", "color":"#98D8AA"},
+                },
+                {
+                    "condition": "['hub', 'manufacture'].includes(params.value)",
+                    "style": {"backgroundColor": "#F7D060", "color":"#F7D060"},
+                },
+                {
+                    "condition": "params.value == 'risk'",
+                    "style": {"backgroundColor": "#E99497", "color":"#E99497"},
+                },
+                {
+                    "condition": "params.value == 'near stockout'",
+                    "style": {"backgroundColor": "#FF6363", "color":"#FF6363"},
+                },
+                {
+                    "condition": "params.value == 'stockout'",
+                    "style": {"backgroundColor": "#577B8D", "color":"#577B8D"},
+                },
+            ]
+            
+            }
+            }
+        for c in df_status_.columns[4:]
+    ]
+    columnDef = comment_columnDef + date_columnDef
     status_table = dag.AgGrid(
             # className= 'ag-status-table',
             id='status-table',
@@ -194,7 +209,7 @@ def _status2table(df_status):
                 'columnLimits': [{'key': c, 'minWidth': 50} for c in datetime_cols],
             },
             style= {
-                'height':500, 'font-size':'12rem', 'font-family':'Century Gothic', 
+                'height':500, 'font-size':'12rem', 'font-family':'Century Gothic', 'margin-top':'0px'
             }
     )
     
