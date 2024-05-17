@@ -5,7 +5,7 @@ import os
 from flask_caching import Cache
 import pandas as pd 
 from simulation import generate_simulation,get_status,ttl_sales_through_rate,ttl_sales_shortage_rate
-from elements import channel_parameter_element,legend_description
+from elements import channel_parameter_element,legend_description,search_result_aggrid
 
 
 
@@ -23,8 +23,11 @@ app = dash.register_page(__name__)
 
 layout = html.Div(
     [         
-    dcc.Store(id='status'),
-    dcc.Store(id='allocation'),
+    # dcc.Store(id='status'),
+    # dcc.Store(id='allocation'),
+    # dcc.Store(id='config-records', data = []),
+    # dcc.Store(id='config-records-list', data = []),
+    # dcc.Store(id='config'),
         html.Div(
             [
              #'main',
@@ -38,7 +41,8 @@ layout = html.Div(
                                     value = 'Air(10 days)',
                                     id='transportation1', 
                                     searchable=False,
-                                    placeholder="Select a transportation method"
+                                    placeholder="Select a transportation method",
+                                    persistence=True
                                 )
                             ], 
                             style={'margin':'20px'}
@@ -50,7 +54,8 @@ layout = html.Div(
                                     value = 'Trunk(5 days)',
                                     id='transportation2', 
                                     searchable=False,
-                                    placeholder="Select a transportation method"
+                                    placeholder="Select a transportation method",
+                                    persistence=True
                                 )
                             ], 
                             style={'margin':'20px'}
@@ -62,30 +67,27 @@ layout = html.Div(
                             ], style={'margin':'20px'}),
                         html.Div([html.Button('Submit', id='submit1', n_clicks=0)], style={'margin':'20px'}),
                     ], 
-                    style = {'width':'20%','height':'800px', 'background-color': '#eff2f6ff', 'display': 'inline-block'}
+                    style = {'width':'20%','height':'950px', 'background-color': '#eff2f6ff', 'display': 'inline-block'}
                 ),
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Div(id ='sales-through', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem', 'font-weight':'400'}),
-                                html.Div(id ='stockout', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem','font-weight':'400'}),
-                            ],
-                            style = {'height': '50px','margin-top': '10px', 'border':'solid 0px grey','border-radius':'2px'}
-                        ),
-                        legend_description,
+                        html.Div(search_result_aggrid(pd.DataFrame(), id = 'history')),
                         html.Div(dcc.Loading(id="test1", type="cube")),
                         html.Div(id="status-details",),
                      
                      ],
-                    style = {'width':'70%', 'height':'800px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
+                    style = {'width':'80%', 'height':'950px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
                 )
             ]
         ),
     ]
-    ,style = {'height':'800px', 'background-color':'white', 'margin-top':'0', 'margin-left':'5%', 'margin-right':'5%'}
+    ,style = {'height':'950px', 'background-color':'white', 'margin-top':'0', 'margin-left':'0%', 'margin-right':'0%'}
 )
 
 
 
-from callbacks import * 
+from callbacks import (
+    get_status_from_prameter,
+    display_status_details,
+    display_channel_parameter_element
+)

@@ -218,12 +218,17 @@
     –––––––––––––––––––––––––––––––––––––––––––––––––– */
     a {
       color: #1EAEDB;
+      font-size:18rem;
       /*text-decoration: underline;*/
       /*cursor: pointer;*/
     }
     a:hover {
       color: black; 
       text-decoration: underline;
+    }
+
+    a:checked,:focus {
+      color: black;
     }
     
     

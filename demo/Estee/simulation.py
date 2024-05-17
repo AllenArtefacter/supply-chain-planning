@@ -3,6 +3,26 @@ from scipy import stats
 import random
 from datetime import datetime as dt, timedelta
 import numpy as np
+from multiprocess import Pool
+import multiprocess as mp
+from tqdm import tqdm
+
+
+def search_multi_process(kwargls, func, n_process = None, **kwargs):
+    if not n_process:
+        n_process = mp.cpu_count()-1
+        
+    print("Number of Processer: " ,n_process)
+        
+    def func_(x):
+        return func(x, **kwargs)
+        
+    
+    pool = Pool(n_process)
+    l = list()
+    for i in tqdm(pool.imap_unordered(func_, kwargls), total = len(kwargls)):
+        l.append(i)
+    return l
 
 from typing import Union
 def generate_simulation(
@@ -45,7 +65,11 @@ def generate_simulation(
         channel_plan = config['channel_plan']
         channel_order = sorted(channel_plan, key=lambda x: channel_plan[x]['priority'])
         for channel in channel_order:
-            
+            # print(sku, channel,df_history
+            #         .query(f"date == '{current_date}' & sku_name == '{sku}' & channel == '{channel}'")
+            #         .stock.values
+            # )
+
             current_stock = (
                     df_history
                     .query(f"date == '{current_date}' & sku_name == '{sku}' & channel == '{channel}'")
@@ -223,3 +247,35 @@ def status_select(x):
     if 'risk' in x:
         return 'risk'
     return 'full'
+
+
+def simulate_one_trails(config_, df_history, df_forecast, df_hub_stock):
+    
+    df_allocation_ = generate_simulation(
+        config_, 
+        ['A', 'B', 'C'],'2023-01-14', '2023-01-15', df_history, df_forecast, df_hub_stock, [1,2,3,4]
+    )
+    sales_though  = ttl_sales_through_rate(df_allocation_)
+    fill_rate =  1- ttl_sales_shortage_rate(df_allocation_)
+    
+    channel_plan = config_['channel_plan']
+    channel_order = sorted(channel_plan, key=lambda x: channel_plan[x]['priority'])
+
+    order = ''
+    for o in channel_order:
+        order += f" {o}({int(config_['channel_plan'][o]['service_level'] * 100)}) "
+
+    df_config_ = pd.DataFrame(
+        {
+            "trial": [config_['trial']],
+            "sales through": [sales_though],
+            "fill rate": [fill_rate],
+            "transportation days (to hub)" : [config_['lead_time_plant2hub']],
+            "transportation days (to channel)" : [config_['lead_time_hud2channel']],
+            "safety_stock_factor": [config_['safety_stock_factor']],
+            "service level and order": [order]
+        }
+    )
+    # print(df_config_)
+    
+    return df_config_
