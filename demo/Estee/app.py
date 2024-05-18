@@ -23,7 +23,9 @@ app.layout = html.Div([
     dcc.Store(id='allocation'),
     dcc.Store(id='config-records', data = []),
     dcc.Store(id='config-records-list', data = []),
+    dcc.Store(id='config-search-records', data = []),
     dcc.Store(id='config'),
+    dcc.Download(id = 'download'),
     dcc.Location(id='url'),
     html.Div(
         [

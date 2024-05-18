@@ -1,5 +1,6 @@
 from dash import Dash, html, dcc, Input, Output, State, callback,Patch
 import pandas as pd 
+import numpy as np 
 import re
 import os 
 from datetime import datetime as dt 
@@ -10,6 +11,8 @@ from datetime import timedelta
 import numpy as np 
 from itertools import permutations,product
 from tqdm import tqdm 
+import xlwings as xw
+
 
 from simulation import (
     generate_simulation,
@@ -20,7 +23,7 @@ from simulation import (
     search_multi_process,
     simulate_one_trails
 )
-from elements import legend_description,search_result_aggrid
+from elements import legend_description,search_result_aggrid,status_block
 
 root_path = os.path.dirname(__file__)
 history_path = os.path.join(root_path, 'data', 'sales_history.csv')
@@ -45,11 +48,12 @@ def show_staus_from_config(row, config_data):
     # print("select", row)
     # print("conf1", config_data)
     # print("conf2", config_data2)
-    
     if not row:
         return '', [],[]
+        
+    
     trial = row[0]['trial']
-    print(trial)
+    # print(trial)
     
     config_ = config_data[trial]
     
@@ -71,19 +75,7 @@ def show_staus_from_config(row, config_data):
     
     status_table = _status2table(df_status)
     
-    status_table = html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(f'Total Sales Through: {np.round(sales_through_rate,2)}%', style = {'display': 'inline-block','margin-left':'50px', 'width': '200px', 'font-size':'18rem', 'font-weight':'400'}),
-                    html.Div(f'Stockout Rate: {np.round(stockout_rate,2)}%', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem','font-weight':'400'}),
-                ],
-                style = {'height': '30px','margin-top': '10px', 'border':'solid 0px grey','border-radius':'2px'}
-            ),
-            legend_description, status_table
-        ],
-        style = {'border':'solid 1px #B3C8CF','border-radius':'2px', 'margin-top':'10px'}
-    )
+    status_table = status_block(status_table, config_, sales_through_rate, stockout_rate), 
     
     return (
         status_table, 
@@ -130,22 +122,8 @@ def show_staus_from_history(row, config_data):
     
     status_table = _status2table(df_status)
     
-    status_table = html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(f'Total Sales Through: {np.round(sales_through_rate,2)}%', style = {'display': 'inline-block','margin-left':'50px', 'width': '200px', 'font-size':'18rem', 'font-weight':'400'}),
-                    html.Div(f'Stockout Rate: {np.round(stockout_rate,2)}%', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem','font-weight':'400'}),
-                ],
-                style = {'height': '30px','margin-top': '10px', 'border':'solid 0px grey','border-radius':'2px'}
-            ),
-            legend_description, status_table
-        ],
-        style = {'border':'solid 1px #B3C8CF','border-radius':'2px', 'margin-top':'10px'}
-    )
-    
     return (
-        status_table, 
+        status_block(status_table, config_, sales_through_rate, stockout_rate), 
         df_status_.reset_index().to_dict('records'), 
         df_allocation.to_dict('records')
     )
@@ -174,10 +152,19 @@ def display_channel_parameter_element(rows):
     
 #     return str(dff)
 
+# @callback(
+#     Output('optimize', 'n_clicks'),
+#     Input('hold-buttom', 'modified_timestamp'),
+#     State('hold-buttom', 'data')
+# )
+# def holding_button(_, data):
+#     if data[0]:
+#         return 0
 
 @callback(
-    [Output("search-results", "rowData"),
-     Output("config", "data")
+    [Output("config-search-records", "data"),
+     Output("config", "data"),
+     Output("search-results", "persistence")
      ],
     Input('optimize', 'n_clicks'),
     State("transportation1", "value"),
@@ -187,11 +174,11 @@ def display_channel_parameter_element(rows):
     State("channel3-service-level", "value"),
     State("channel4-service-level", "value"),
     prevent_initial_call=True,
-    # blocking=True
+    blocking=True
 )
 def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
-    
-    if click > 0:
+    print(click)
+    if click >= 1:
         if len(t1):
             t1 = list(map(float, re.findall(r'\d+', str(t1))))
         else:
@@ -211,7 +198,9 @@ def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
         priority = [1,2,3,4]
         priority_permu = list(permutations(priority, 4))
         
-        print(c1)
+    
+        
+        print(t1,t2,c1,c2,c3,c4,)
         combinations = list(
             product(   
                 t1, 
@@ -239,15 +228,15 @@ def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
                     },        
                     "channel 2" :{
                         "priority" : c[-1][1],
-                        "service_level" : c[2]
+                        "service_level" : c[3]
                     },
                     "channel 3" :{
-                        "priority" : c[-1][3],
-                        "service_level" : c[2]
+                        "priority" : c[-1][2],
+                        "service_level" : c[4]
                     },
                     "channel 4" :{
                         "priority" : c[-1][3],
-                        "service_level" : c[4]
+                        "service_level" : c[5]
                     },
                 }
             }
@@ -270,8 +259,8 @@ def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
             (df_rst['fill rate'] >= fill_rate_threshold ) 
         ]
         
-            
-        return df_rst.to_dict('records'),config_spaces
+    
+        return df_rst.to_dict('records'),config_spaces,True
 
 
 
@@ -292,6 +281,15 @@ def _generate_service_level(l):
 def update_history(_,data):
     # print('update',data)
     return data
+
+
+@callback(
+    Output("search-results", "rowData"),
+    Input("config-search-records", "modified_timestamp"),
+    State("config-search-records", "data")
+)
+def keep_search_result(_, data):
+    return data
     
 @callback(
     [Output("test1", "children"),
@@ -310,6 +308,7 @@ def update_history(_,data):
     # prevent_initial_callbacks='initial_duplicate'
 )
 def get_status_from_prameter(click, t1,  t2, channel_rows, r,rl):
+    
     if click > 0:
         if not t1:
             return "please select tranportation to hub"
@@ -356,19 +355,7 @@ def get_status_from_prameter(click, t1,  t2, channel_rows, r,rl):
         
         status_table = _status2table(df_status)
         
-        status_table = html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(f'Total Sales Through: {np.round(sales_through_rate,2)}%', style = {'display': 'inline-block','margin-left':'50px', 'width': '200px', 'font-size':'18rem', 'font-weight':'400'}),
-                        html.Div(f'Stockout Rate: {np.round(stockout_rate,2)}%', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem','font-weight':'400'}),
-                    ],
-                    style = {'height': '30px','margin-top': '10px', 'border':'solid 0px grey','border-radius':'2px'}
-                ),
-                legend_description, status_table
-            ],
-            style = {'border':'solid 1px #B3C8CF','border-radius':'2px', 'margin':'10px'}
-        )
+        status_table = status_block(status_table, config, sales_through_rate, stockout_rate), 
         
         r.append(config)
         channel_plan = config['channel_plan']
@@ -580,3 +567,112 @@ def row_pinning_top2(selected_rows):
     grid_option_patch = Patch()
     grid_option_patch["pinnedTopRowData"] = selected_rows
     return grid_option_patch
+
+@callback(
+    Output('download',"data"),
+    Input('download-button', 'n_clicks'),
+    State('allocation', 'data'),
+    State('status','data'),
+    State('config','data'),
+    prevent_initial_call=True
+    
+)
+def download_excel(clicks,allocation, status,  config):
+    if clicks > 0:
+        xw.App().visible = False
+        df_status = pd.DataFrame(status).reset_index(drop=True)
+        df_allocation = pd.DataFrame(allocation)
+        wb = xw.Book('data/allocation.xlsx')  # Connects to the active instance of Excel
+        sheet = wb.sheets['Sheet1']
+        sheet.range("A:L")[1:,:].clear_contents()
+        sheet['A1'].options(index=False).value = df_allocation
+        sheet = wb.sheets['Sheet2']
+        sheet.range('A3').value = df_status
+        wb.save('data/allocation_download.xlsx')
+        wb.close()
+        return dcc.send_file(
+            "data/allocation_download.xlsx"
+        )
+    
+    
+@callback(
+    Output("test4", "children"),
+    Input("allocation", "data"),
+    Input("status", "data"),
+    prevent_initial_call=True
+)
+def alert_summary(allocation, statue):
+    
+    df_allocation = pd.DataFrame(allocation)
+    
+    df_summary = (
+        df_allocation
+        .rename(columns= {'sku_name':'sku'})
+        .pivot_table(
+            index= ['sku', 'channel' ],
+            columns= 'status',
+            values = 'date',
+            aggfunc= 'count'
+        )
+        .reset_index()
+    )
+    
+    df_start_date = (
+        df_allocation
+            .rename(columns= {'sku_name':'sku'})
+            .groupby(['sku', 'channel'], as_index=False)
+            .agg({'date':'min'})
+            .rename(columns= {'date':'est start date'})
+    )
+    df_start_date['est start date'] =  df_start_date['est start date'].apply(
+        lambda x: pd.to_datetime(x).strftime("%b %d %Y")
+    )
+
+    df_end_date = (
+        df_allocation
+        .rename(columns= {'sku_name':'sku'})
+        .groupby(['sku', 'channel'], as_index=False)
+        .agg({'date':'max'})
+        .rename(columns= {'date':'est end date'})
+    )
+    df_end_date['est end date'] =  df_end_date['est end date'].apply(
+        lambda x: pd.to_datetime(x).strftime("%b %d %Y")
+    )
+    
+    
+    df_summary = (
+        df_summary
+        .merge(df_start_date, on = ['sku', 'channel'])
+        .merge(df_end_date, on = ['sku', 'channel'])
+    )
+    
+    print(df_summary.columns)
+    
+    columnDef = [
+        {'field': 'sku', 'cellStyle': {'font-size': '12rem'}, 'maxWidth':100},
+        {'field': 'channel', 'cellStyle': {'font-size': '12rem'},'maxWidth':100},
+        {'field': 'full', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        {'field': 'risk', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        {'field': 'near stockout', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        {'field': 'stockout', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        {'field': 'est start date', 'cellStyle': {'font-size': '12rem'},'maxWidth':150},
+        {'field': 'est end date', 'cellStyle': {'font-size': '12rem'},'maxWidth':150},
+    ]
+    
+    summary_table = dag.AgGrid(
+            # className= 'ag-status-table',
+            # id='status-table',
+            rowData=df_summary.to_dict('records'),
+            columnDefs=columnDef,
+            defaultColDef={"filter": False},
+            columnSize="sizeToFit",
+            dashGridOptions= {"rowHeight": 30},
+            columnSizeOptions={
+                'defaultMinWidth': 80,
+                # 'columnLimits': [{'key': c, 'minWidth': 50} for c in datetime_cols],
+            },
+            style= {
+                'height':400, 'font-size':'12rem', 'font-family':'Century Gothic', 'margin':'0px'
+            }
+    )
+    return [summary_table]

@@ -32,6 +32,7 @@ layout = html.Div(
     # dcc.Store(id='allocation'),
     # dcc.Store(id='config'),
     # dcc.Store(id='config-records'),
+        dcc.Store(id = 'hold-buttom', data = [False]),
         html.Div(
             [
              #'main',
@@ -88,7 +89,7 @@ layout = html.Div(
                 ),
                 html.Div(
                     [
-                        html.Div(search_result_aggrid(pd.DataFrame())),
+                        html.Div(dcc.Loading(search_result_aggrid(pd.DataFrame()), type="cube")),
                         html.Div(dcc.Loading(id="test1", type="cube")),
                         html.Div(id="status-details",),
                      

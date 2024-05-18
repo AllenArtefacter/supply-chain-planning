@@ -47,13 +47,20 @@
   font-size: 18px;
 } */
 
+/* Plotly
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.modebar{
+  display: none !important;
+}
+
 .ag-header-cell-label {
   text-overflow: clip;
   overflow: visible!important;
   white-space: normal;
 }
 
-
+/* Ag Grid
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
 .ag-theme-alpine {
   /* disable all borders */
   --ag-borders-color:grey;
@@ -231,7 +238,7 @@
       color: black;
     }
     
-    
+
     /* Buttons
     –––––––––––––––––––––––––––––––––––––––––––––––––– */
     .button,

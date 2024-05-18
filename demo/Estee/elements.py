@@ -1,6 +1,25 @@
 
 import dash_ag_grid as dag
 from dash import html, dcc, callback, Input, Output
+import numpy as np 
+
+def status_block(status_table, config, sales_through_rate, stockout_rate):
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(f'Total Sales Through: {np.round(sales_through_rate*100,2)}%', style = {'display': 'inline-block','margin-left':'50px', 'width': '200px', 'font-size':'18rem', 'font-weight':'400'}),
+                    html.Div(f'Total Fill Rate: {np.round((1-stockout_rate)*100,2)}%', style = {'display': 'inline-block', 'width': '200px', 'font-size':'18rem','font-weight':'400'}),
+                    html.Button("Download", id ='download-button', n_clicks = 0, style={"margin-left": '500px'}),
+                    dcc.Store(id = 'status-config', data = [config])
+                ],
+                style = {'height': '50px','margin-top': '10px', 'border':'solid 0px grey','border-radius':'2px'}
+            ),
+            legend_description, status_table
+        ],
+        style = {'border':'solid 1px #B3C8CF','border-radius':'2px', 'margin-top':'10px'}
+    )
+
 
 channel_parameter_element = dag.AgGrid(
         id='channel-parameter',
@@ -44,8 +63,9 @@ def search_result_aggrid(data, id = 'search-results'):
             columnSize="sizeToFit",
             dashGridOptions={"rowSelection":"single", "rowDragManaged": True, "rowDragEntireRow": True,},
             style= {
-                'height':240, 'font-size':'12rem', 'text-flow':'clip'
-            }
+                'height':240, 'font-size':'12rem', 'text-flow':'clip','margin-top':'20px'
+            },
+            persistence=True,
     )
     
     return [agid]
