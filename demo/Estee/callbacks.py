@@ -12,6 +12,8 @@ import numpy as np
 from itertools import permutations,product
 from tqdm import tqdm 
 import xlwings as xw
+import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 
 from simulation import (
@@ -575,23 +577,54 @@ def row_pinning_top2(selected_rows):
     Input('download-button', 'n_clicks'),
     State('allocation', 'data'),
     State('status','data'),
-    State('config','data'),
+    State('status-config','data'),
     prevent_initial_call=True
-    
 )
-def download_excel(clicks,allocation, status,  config):
+def download_excel(clicks,allocation, status, config):
     if clicks > 0:
-        xw.App().visible = False
+        # xw.App().visible = False
         df_status = pd.DataFrame(status).reset_index(drop=True)
         df_allocation = pd.DataFrame(allocation)
-        wb = xw.Book(excel_path)  # Connects to the active instance of Excel
-        sheet = wb.sheets['Sheet1']
-        sheet.range("A:L")[1:,:].clear_contents()
-        sheet['A1'].options(index=False).value = df_allocation
-        sheet = wb.sheets['Sheet2']
-        sheet.range('A3').value = df_status
+        df_config = pd.DataFrame(config)
+        # wb = xw.Book(excel_path)  # Connects to the active instance of Excel
+        # sheet = wb.sheets['Sheet1']
+        # sheet.range("A:L")[1:,:].clear_contents()
+        # sheet['A1'].options(index=False).value = df_allocation
+        # sheet = wb.sheets['Sheet2']
+        # sheet.range('A3').value = df_status
+        # wb.save('allocation_download.xlsx')
+        # wb.close()
+
+        wb = openpyxl.load_workbook(excel_path)
+        sheet = wb['allocation']
+        for a in sheet['A1':'M1000']: #you can set the range here 
+            for cell in a:
+                cell.value = None
+        data = dataframe_to_rows(df_allocation, index=False, header=True)
+            
+        for r, row in enumerate(data, start=1):
+            for c, value in enumerate(row, start=1):
+                sheet.cell(row=r, column=c).value = value
+                
+                
+        sheet = wb['status']
+        data = dataframe_to_rows(df_status, index=False, header=True)
+
+        for r, row in enumerate(data, start=1):
+            for c, value in enumerate(row, start=1):
+                sheet.cell(row=r+2, column=c).value = value
+        sheet.cell(column =1, row = 2).value = ttl_sales_through_rate(df_allocation)
+        sheet.cell(column =3, row = 2).value = ttl_sales_shortage_rate(df_allocation)
+        
+        sheet = wb['config']
+        data = dataframe_to_rows(df_config, index=False, header=True)
+
+        for r, row in enumerate(data, start=1):
+            for c, value in enumerate(row, start=1):
+                sheet.cell(row=r, column=c).value = str(value)
+        
         wb.save('allocation_download.xlsx')
-        wb.close()
+        
         return dcc.send_file(
             "allocation_download.xlsx"
         )
