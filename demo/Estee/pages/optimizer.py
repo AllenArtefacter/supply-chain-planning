@@ -2,7 +2,6 @@ import dash
 from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 import os 
-from flask_caching import Cache
 import pandas as pd 
 from simulation import generate_simulation,get_status,ttl_sales_through_rate,ttl_sales_shortage_rate
 from elements import (

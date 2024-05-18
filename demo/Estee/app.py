@@ -8,14 +8,30 @@ import pandas as pd
 import base64
 import os 
 import dash_ag_grid as dag
+import dash_auth
+import sys 
+sys.path.insert(0, os.path.dirname(__file__))
+
+import callbacks
+import simulation
+import elements
 
 logo_path = os.path.join(os.path.dirname(__file__), 'assets', '220px-Estée_Lauder_Companies_logo.svg.png')
 logo = base64.b64encode(open(logo_path, 'rb').read()).decode('ascii')
 logo_black_path = os.path.join(os.path.dirname(__file__), 'assets', 'Artefact-AI-is-about-People.png')
 logo_black = base64.b64encode(open(logo_black_path, 'rb').read()).decode('ascii')
 
+VALID_USERNAME_PASSWORD_PAIRS = {
+    'artefact': 'artefact'
+}
 
 app = Dash(__name__, use_pages=True)
+
+auth = dash_auth.BasicAuth(
+    app,
+    VALID_USERNAME_PASSWORD_PAIRS
+)
+
 app.config.suppress_callback_exceptions = True
 # app.css.config.serve_locally = True
 app.layout = html.Div([
@@ -51,4 +67,4 @@ app.layout = html.Div([
 ])
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

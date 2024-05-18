@@ -2,18 +2,17 @@ import dash
 from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 import os 
-from flask_caching import Cache
 import pandas as pd 
 from simulation import generate_simulation,get_status,ttl_sales_through_rate,ttl_sales_shortage_rate
 from elements import channel_parameter_element,legend_description,search_result_aggrid
-
-
 
 
 root_path = os.path.dirname(os.path.dirname(__file__))
 history_path = os.path.join(root_path, 'data', 'sales_history.csv')
 forecast_path = os.path.join(root_path, 'data', 'sales_forecast.csv')
 hub_path = os.path.join(root_path, 'data', 'hub_stock.csv')
+
+
 
 df_history = pd.read_csv(history_path)
 df_forecast = pd.read_csv(forecast_path)

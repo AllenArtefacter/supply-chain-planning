@@ -34,6 +34,8 @@ df_history = pd.read_csv(history_path)
 df_forecast = pd.read_csv(forecast_path)
 df_hub_stock = pd.read_csv(hub_path)
 
+excel_path = os.path.join(root_path, 'data', 'allocation.xlsx')
+
 
 @callback(
     Output("test1", "children",allow_duplicate=True),
@@ -582,16 +584,16 @@ def download_excel(clicks,allocation, status,  config):
         xw.App().visible = False
         df_status = pd.DataFrame(status).reset_index(drop=True)
         df_allocation = pd.DataFrame(allocation)
-        wb = xw.Book('data/allocation.xlsx')  # Connects to the active instance of Excel
+        wb = xw.Book(excel_path)  # Connects to the active instance of Excel
         sheet = wb.sheets['Sheet1']
         sheet.range("A:L")[1:,:].clear_contents()
         sheet['A1'].options(index=False).value = df_allocation
         sheet = wb.sheets['Sheet2']
         sheet.range('A3').value = df_status
-        wb.save('data/allocation_download.xlsx')
+        wb.save('allocation_download.xlsx')
         wb.close()
         return dcc.send_file(
-            "data/allocation_download.xlsx"
+            "allocation_download.xlsx"
         )
     
     
