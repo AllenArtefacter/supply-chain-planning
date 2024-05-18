@@ -66,7 +66,7 @@ layout = html.Div(
                             ], style={'margin':'20px'}),
                         html.Div([html.Button('Submit', id='submit1', n_clicks=0)], style={'margin':'20px'}),
                     ], 
-                    style = {'width':'20%','height':'950px', 'background-color': '#eff2f6ff', 'display': 'inline-block'}
+                    style = {'width':'20%','height':'1000px', 'background-color': '#eff2f6ff', 'display': 'inline-block'}
                 ),
                 html.Div(
                     [
@@ -75,12 +75,12 @@ layout = html.Div(
                         html.Div(id="status-details",),
                      
                      ],
-                    style = {'width':'80%', 'height':'950px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
+                    style = {'width':'80%', 'height':'1000px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
                 )
             ]
         ),
     ]
-    ,style = {'height':'950px', 'background-color':'white', 'margin-top':'0', 'margin-left':'0%', 'margin-right':'0%'}
+    ,style = {'height':'1000px', 'background-color':'white', 'margin-top':'0', 'margin-left':'0%', 'margin-right':'0%'}
 )
 
 
