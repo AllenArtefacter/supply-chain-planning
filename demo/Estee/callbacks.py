@@ -223,7 +223,7 @@ def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
                 "safety_stock_factor" : {
                     "A" : 10,
                     "B" : 10, 
-                    "C": 15
+                    "C": 10
                 },
                 "channel_plan":{
                     "channel 1" :{
