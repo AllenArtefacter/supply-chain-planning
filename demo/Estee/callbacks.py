@@ -14,6 +14,8 @@ from tqdm import tqdm
 import xlwings as xw
 import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
+import plotly.express as px
+import plotly.graph_objs as go
 
 
 from simulation import (
@@ -680,16 +682,21 @@ def alert_summary(allocation, statue):
         .merge(df_start_date, on = ['sku', 'channel'])
         .merge(df_end_date, on = ['sku', 'channel'])
     )
-    
+    df_summary['stock cover (nbr of days)'] = df_summary.apply(
+        lambda x: x['full'] + x['risk'] + x['near stockout'],axis=1
+    )
+    df_summary['cumulated OSS days'] = df_summary['stockout']
     print(df_summary.columns)
     
     columnDef = [
         {'field': 'sku', 'cellStyle': {'font-size': '12rem'}, 'maxWidth':100},
         {'field': 'channel', 'cellStyle': {'font-size': '12rem'},'maxWidth':100},
-        {'field': 'full', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
-        {'field': 'risk', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
-        {'field': 'near stockout', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
-        {'field': 'stockout', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        # {'field': 'full', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        # {'field': 'risk', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        # {'field': 'near stockout', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        # {'field': 'stockout', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
+        {'field': 'stock cover (nbr of days)', 'cellStyle': {'font-size': '12rem'},'maxWidth':120,},
+        {'field': 'cumulated OSS days', 'cellStyle': {'font-size': '12rem'},'maxWidth':100,},
         {'field': 'est start date', 'cellStyle': {'font-size': '12rem'},'maxWidth':150},
         {'field': 'est end date', 'cellStyle': {'font-size': '12rem'},'maxWidth':150},
     ]
@@ -707,7 +714,118 @@ def alert_summary(allocation, statue):
                 # 'columnLimits': [{'key': c, 'minWidth': 50} for c in datetime_cols],
             },
             style= {
-                'height':400, 'font-size':'12rem', 'font-family':'Century Gothic', 'margin':'0px'
+                'height':400, 'font-size':'12rem', 'margin':'0px'
             }
     )
     return [summary_table]
+
+
+@callback(
+    Output('optimize-display', 'children'),
+    Input("search-results", "selectedRows"), 
+    # Input('config', 'modified_timestamp'),
+    Input("search-results", "rowData"),
+    prevent_initial_call=True
+)
+def show_optimize(row, data):
+    data = pd.DataFrame(data)
+    data['selected'] = 0
+    print(row)
+    # print(data)
+    trial = -1
+    
+    if row:
+        trial = row[0]['trial']
+        
+    print(data.query(f'trial == {trial}'))
+    
+    
+    data['text'] = data.apply(
+        lambda x: (
+            f"<b>Trial</b>: {x['trial']}<br>"
+            f"<b>Sales through</b>: {x['sales through']:.1%}<br>"
+            f"<b>Fill rate</b>: {x['fill rate']:.1%}<br>"
+            f"<b>Transportation days (to hub)</b>: {x['transportation days (to hub)']}<br>"
+            f"<b>Transportation days (to channel)</b>: {x['transportation days (to channel)']}<br>" 
+            f"<b>Order and sevice level</b>: {x['service level and order'].replace(' c', '<br>c')}<br>"  
+        ),
+        axis = 1
+    )
+    
+    fig = go.Figure()
+    
+    fig.add_trace(
+        go.Scatter(
+            x = data.query(f'trial !={trial}')['sales through'],
+            y = data.query(f'trial !={trial}')['fill rate'],
+            text = data.query(f'trial !={trial}')['text'],
+            hovertemplate ='%{text}',
+            mode='markers',
+            name = 'candidate',
+            marker=dict(
+                color='#eff2f6',
+                size=10,
+                line=dict(
+                    color='#344C64',
+                    width=1
+                ),
+                opacity = .7,
+            ),
+        )
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x = data.query(f'trial == {trial}')['sales through'],
+            y = data.query(f'trial == {trial}')['fill rate'],
+            text = data.query(f'trial !={trial}')['text'],
+            hovertemplate ='<b>%{text}</b>',
+            name = 'seleted',
+            mode='markers',
+            marker=dict(
+                color='#5AB2FF',
+                size=10,
+                line=dict(
+                    color='#344C64',
+                    width=1
+                )
+            )
+        )
+    )
+    
+    
+    
+    # fig = px.scatter(
+    #     data, 
+    #     x='sales through', 
+    #     y='fill rate',
+    #     hover_name= 'trial',
+    #     hover_data = [
+    #         'transportation days (to hub)', 
+    #         'transportation days (to hub)',
+    #         'service level and order'
+    #     ],
+    #     color = 'selected',
+    #     opacity= .8 
+    # )
+    fig.update_xaxes(mirror = True, title = 'sale through')
+    fig.update_yaxes(mirror = True, title = 'fill rate')
+    fig.update_layout(
+        template = 'simple_white', 
+        margin = {'t':0, 'b':10, 'l':0, 'r':10},
+        font = {'size':8, 'family':'Century Gothic'},
+        paper_bgcolor='#f5f7f9',
+        height = 250, 
+        width = 300,
+        showlegend = False,
+        hoverlabel=dict(
+            bgcolor="#f5f7f9",
+            bordercolor = '#f5f7f9',
+            font_size=8,
+            font_color = 'black',
+            font_family="Century Gothic"
+        )
+    )
+    
+    return dcc.Graph(figure=fig, style = {'height':"240px"})
+    

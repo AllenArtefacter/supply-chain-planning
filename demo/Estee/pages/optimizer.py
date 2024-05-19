@@ -88,12 +88,16 @@ layout = html.Div(
                 ),
                 html.Div(
                     [
-                        html.Div(dcc.Loading(search_result_aggrid(pd.DataFrame()), type="cube")),
+                        html.Div(
+                            dcc.Loading(search_result_aggrid(pd.DataFrame()), type="cube"),
+                            style={'display': 'inline-block', 'width': "75%",'verticalAlign' : 'bottom'}
+                        ),
+                        html.Div('',id = 'optimize-display', style = {'display': 'inline-block', 'border':"solid 0px grey", 'border-radius':'2px','width':'24%', 'height':'240px','verticalAlign' : 'bottom'}),
                         html.Div(dcc.Loading(id="test1", type="cube")),
                         html.Div(id="status-details",),
                      
                      ],
-                    style = {'width':'80%', 'height':'1000px','background-color':'#eff2f6a5','display': 'inline-block','verticalAlign' : 'bottom'}
+                    style = {'width':'80%', 'height':'1000px','background-color':'#f5f7f9','display': 'inline-block','verticalAlign' : 'bottom'}
                 )
             ]
         ),
