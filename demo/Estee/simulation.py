@@ -103,7 +103,7 @@ def generate_simulation(
                 hub_shortage = allocation_needed - allocation_real
                 hub_stock[sku] = 0
                 allocation[config['lead_time_hud2channel']] = {'stock_in':allocation_real, 'stock_from':'hub' if allocation_real else ''}
-                allocation[config['lead_time_plant2hub']] = {'stock_in':hub_shortage, 'stock_from':'manufacture'} 
+                allocation[config['lead_time_plant2hub']+ config['lead_time_hud2channel'] ] = {'stock_in':hub_shortage, 'stock_from':'manufacture'} 
             
             df_allocation_ = generate_sales_stock_by_pred_by_week(
                 sku, channel, start_date, current_date,timedelta(days=1),4, allocation, sales_forecast_ls, current_stock
