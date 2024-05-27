@@ -82,7 +82,19 @@ layout = html.Div(
                             'channel 4',
                             service_range4
                             ], style={'margin':'20px'}),
-                        html.Div([html.Button('Optimize', id='optimize', n_clicks=0)], style={'margin':'20px'}),
+                        html.Div(
+                            [   
+                                dcc.Loading(
+                                    [
+                                        html.Button('Optimize', id='optimize', n_clicks=0),
+                                        html.Div('', id = 'loading-optimize-button')
+                                    ],
+                                    id = 'loading-button',
+                                    type = 'circle'
+                                )
+                            ], 
+                            style={'margin':'20px'}
+                        ),
                     ], 
                     style = {'width':'20%','height':'1000px', 'background-color': '#eff2f6ff', 'display': 'inline-block'}
                 ),

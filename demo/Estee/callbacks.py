@@ -170,7 +170,8 @@ def display_channel_parameter_element(rows):
 @callback(
     [Output("config-search-records", "data"),
      Output("config", "data"),
-     Output("search-results", "persistence")
+     Output("search-results", "persistence"),
+     Output('loading-optimize-button', 'children')
      ],
     Input('optimize', 'n_clicks'),
     State("transportation1", "value"),
@@ -180,7 +181,8 @@ def display_channel_parameter_element(rows):
     State("channel3-service-level", "value"),
     State("channel4-service-level", "value"),
     prevent_initial_call=True,
-    blocking=True
+    blocking=True,
+    timeout = 10,
 )
 def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
     print(click)
@@ -266,7 +268,7 @@ def optimize_status_from_prameter(click, t1,  t2, c1,c2,c3,c4):
         ]
         
     
-        return df_rst.to_dict('records'),config_spaces,True
+        return df_rst.to_dict('records'),config_spaces,True, ''
 
 
 
